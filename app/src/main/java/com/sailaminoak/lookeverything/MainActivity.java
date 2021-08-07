@@ -4,6 +4,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.DialogInterface;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,6 +20,8 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     ImageButton flag;
+    SoundPool soundPool;
+    int shortAlarm;
     Button button;
     EditText hour,minute,second;
     LinearLayout flagInformation;
@@ -26,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     int counting=0;
     long milliseconds=0;
     int rank=1;
+    int buzz;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +47,15 @@ public class MainActivity extends AppCompatActivity {
                 });
         AlertDialog alert = builder.create();
         alert.show();
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.LOLLIPOP){
+            AudioAttributes audioAttributes=new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
+
+            soundPool=new SoundPool.Builder().setMaxStreams(6).setAudioAttributes(audioAttributes).build();
+        }else{
+            soundPool=new SoundPool(1, AudioManager.STREAM_MUSIC,0);
+        }
+        shortAlarm=soundPool.load(MainActivity.this,R.raw.ding,1);
+        buzz=soundPool.load(this,R.raw.shortbuzz,1);
         hour=findViewById(R.id.hour);
         minute=findViewById(R.id.minute);
         second=findViewById(R.id.second);
@@ -61,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
                   helper();
               }
               else{
+                  soundPool.play(buzz,1,1,0,0,1);
                   stop=true;
                   start=true;
                   button.setBackgroundColor(getResources().getColor(R.color.purple_700));
@@ -74,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         flag.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                soundPool.play(shortAlarm,1,1,0,0,1);
                 TextView textView=new TextView(MainActivity.this);
                 textView.setTextColor(getResources().getColor(R.color.white));
                 textView.setTextSize(20);
@@ -89,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void helper(){
         flagInformation.removeAllViews();
+        soundPool.play(shortAlarm,1,1,0,0,1);
         rank=1;
         hour.setText("0");
         minute.setText("0");
@@ -101,6 +120,14 @@ public class MainActivity extends AppCompatActivity {
         button.setText("Stop");
         button.setBackgroundColor(getResources().getColor(R.color.red_background));
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        soundPool.release();
+        soundPool=null;
+    }
+
     public void count(){
         final Handler handler = new Handler(Looper.getMainLooper());
         if(!stop){
@@ -142,6 +169,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
     }
+
 }
